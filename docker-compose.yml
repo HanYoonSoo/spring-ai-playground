@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: postgres15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: spring_ai_playground
+    ports:
+      - "13501:5432"
+    volumes:
+      - ./docker/postgres_data:/var/lib/postgresql/data
+    networks:
+      - home_network
+
+networks:
+  home_network:
