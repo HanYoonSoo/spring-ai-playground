@@ -3,7 +3,7 @@ plugins {
     kotlin("plugin.spring") version "1.9.25"
     kotlin("plugin.jpa") version "1.9.25"
     kotlin("plugin.serialization") version "1.9.25"
-    id("org.springframework.boot") version "4.0.1"
+    id("org.springframework.boot") version "3.5.3"
     id("io.spring.dependency-management") version "1.1.7"
     id("org.flywaydb.flyway") version "11.3.1"
 }
@@ -18,6 +18,8 @@ java {
     }
 }
 
+extra["springAiVersion"] = "1.0.0"
+
 configurations {
     compileOnly {
         extendsFrom(configurations.annotationProcessor.get())
@@ -26,16 +28,18 @@ configurations {
 
 repositories {
     mavenCentral()
+    maven { url = uri("https://repo.spring.io/release") }
 }
 
 dependencies {
     // spring boot & kotlin
-    implementation("org.springframework.boot:spring-boot-starter-webmvc")
+    implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("tools.jackson.module:jackson-module-kotlin")
-    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    testRuntimeOnly("com.h2database:h2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     // Lombok
@@ -43,7 +47,6 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok")
 
     // JPA
-    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
     // PostgresSQL
@@ -63,13 +66,16 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 
     // Swagger
-    implementation("org.springdoc:springdoc-openapi-webmvc-core")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
 
     // PDFBox
     implementation("org.apache.pdfbox:pdfbox:2.0.30")
 
     // Kotlin serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+
+    // Spring AI 의존성
+    implementation("org.springframework.ai:spring-ai-starter-model-openai")
 
     // macos
     if (isAppleSilicon()) {
@@ -96,6 +102,12 @@ noArg {
     annotation("jakarta.persistence.Entity")
     annotation("jakarta.persistence.MappedSuperclass")
     annotation("jakarta.persistence.Embeddable")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.ai:spring-ai-bom:${property("springAiVersion")}")
+    }
 }
 
 fun isAppleSilicon() = System.getProperty("os.name") == "Mac OS X" && System.getProperty("os.arch") == "aarch64"
