@@ -38,3 +38,7 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### Postgresql Data ###
+docker/data/**
+docker/postgres_data/**
