@@ -1,2 +1,26 @@
 spring:
-  application.name: spring-ai-playground
+  application:
+    name: spring-ai-playground
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+  jpa:
+    properties:
+      hibernate:
+        query.in_clause_parameter_padding: true
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    baseline-on-migrate: true
+    out-of-order: true
+  profiles:
+    default: local
+    active: local
+
+springdoc:
+  swagger-ui:
+    tags-sorter: alpha
+    operations-sorter: method
+    disable-swagger-default-url: true
+
