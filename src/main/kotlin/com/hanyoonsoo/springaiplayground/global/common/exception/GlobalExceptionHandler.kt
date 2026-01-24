@@ -10,11 +10,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 @RestControllerAdvice
 class GlobalExceptionHandler {
 
+    private val log = org.slf4j.LoggerFactory.getLogger(this::class.java)
+
     @ExceptionHandler(Exception::class)
     fun handleException(
         response: HttpServletResponse,
         e: Exception
     ): ApiResponse<Unit> {
+        log.error("Unhandled Exception occurred: ", e)
         response.status = HttpStatus.INTERNAL_SERVER_ERROR.value()
 
         return ApiResponse.fail()
