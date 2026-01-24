@@ -76,8 +76,7 @@ dependencies {
 
     // Spring AI 의존성
     implementation("org.springframework.ai:spring-ai-starter-model-openai")
-    implementation ("org.springframework.ai:spring-ai-starter-vector-store-pgvector")
-
+    implementation("org.springframework.ai:spring-ai-starter-vector-store-pgvector")
 
     // macos
     if (isAppleSilicon()) {
