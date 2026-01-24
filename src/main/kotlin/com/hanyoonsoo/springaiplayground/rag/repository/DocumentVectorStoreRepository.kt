@@ -14,8 +14,6 @@ class DocumentVectorStoreRepository(
     }
 
     fun findDocumentsSimilaritySearch(searchRequest: SearchRequest): List<Document>? {
-        val response = documentVectorStore.similaritySearch(searchRequest)
-
-        return response
+        return documentVectorStore.similaritySearch(searchRequest)
     }
 }
