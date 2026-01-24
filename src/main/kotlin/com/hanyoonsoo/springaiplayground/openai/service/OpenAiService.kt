@@ -13,6 +13,14 @@ import org.springframework.stereotype.Service
 class OpenAiService(
     private val openAiChatClient: ChatClient,
 ) {
+//    private fun registerTools(
+//        promptRequest: ChatClient.ChatClientRequestSpec,
+//        tools: List<OpenAiTool>
+//    ) {
+//        if (tools.contains(OpenAiTool.TAVILY_SEARCH)) {
+//            promptRequest.functions(*tools.map { it.toolName }.toTypedArray()) // Bean 이름 사용 (varargs)
+//        }
+//    }
     fun sendChatMessage(
         request: OpenAiSendRequest,
     ): String? {
@@ -34,6 +42,7 @@ class OpenAiService(
                 .temperature(0.7)
                 .build()
 
+            // registerTools(promptRequest, tools)
             val prompt = Prompt(listOf(systemMessage, userMessage, assistantMessage), openAiChatOptions)
 
             return openAiChatClient.prompt(prompt)
