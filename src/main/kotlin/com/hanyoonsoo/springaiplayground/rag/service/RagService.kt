@@ -2,7 +2,7 @@ package com.hanyoonsoo.springaiplayground.rag.service
 
 import com.hanyoonsoo.springaiplayground.openai.dto.OpenAiSendRequest
 import com.hanyoonsoo.springaiplayground.openai.enum.OpenAiModel
-import com.hanyoonsoo.springaiplayground.openai.enum.OpenAiTool
+//import com.hanyoonsoo.springaiplayground.openai.enum.OpenAiTool
 import com.hanyoonsoo.springaiplayground.openai.service.OpenAiService
 import com.hanyoonsoo.springaiplayground.rag.dto.SendChatRequest
 import com.hanyoonsoo.springaiplayground.rag.prompt.RagPrompt
@@ -20,6 +20,7 @@ class RagService(
     private val documentVectorStoreRepository: DocumentVectorStoreRepository,
     private val openAiService: OpenAiService
 ) {
+    private val log = org.slf4j.LoggerFactory.getLogger(this::class.java)
 
     fun addDocuments(projectId: Long, file: MultipartFile) {
         val pdfDocument = PDDocument.load(file.inputStream)
@@ -99,11 +100,16 @@ class RagService(
     }
 
     fun chatWithRag(projectId: Long, request: SendChatRequest): String {
+        log.info("Chat Request - ProjectId: {}, Query: {}", projectId, request.query)
         val documents = findDocuments(projectId, request.query)
+        log.info("Found {} documents", documents.size)
 
         val context = if (documents.isNotEmpty()) {
-            documents.joinToString("\n\n") { doc -> "- ${doc.text}" }
+            val joined = documents.joinToString("\n\n") { doc -> "- ${doc.text}" }
+            log.info("Context length: {}", joined.length)
+            joined
         } else {
+            log.warn("No documents found for ProjectId: {} and Query: {}", projectId, request.query)
             "No related documents found in the database."
         }
 
@@ -112,7 +118,7 @@ class RagService(
             systemMessage = RagPrompt.RAG_SYSTEM.template,
             userMessage = RagPrompt.RAG_USER.format(context, request.query),
             model = OpenAiModel.GPT_4O, // 고성능 모델
-            tools = listOf(OpenAiTool.TAVILY_SEARCH) // Tavily 검색 도구 활성화
+//            tools = listOf(OpenAiTool.TAVILY_SEARCH) // Tavily 검색 도구 활성화
         )
 
         return openAiService.sendChatMessage(openAiRequest) ?: "답변 생성 실패"
@@ -127,7 +133,7 @@ class RagService(
             .similarityThreshold(0.5)
             .filterExpression(filterExpression)
             .build()
-        
+
         return documentVectorStoreRepository.findDocumentsSimilaritySearch(searchRequest) ?: emptyList()
     }
 
@@ -138,7 +144,7 @@ class RagService(
             systemMessage = RagPrompt.DOCUMENT_SUMMARY_SYSTEM.template,
             userMessage = RagPrompt.DOCUMENT_SUMMARY_USER.format(safeContent),
             model = OpenAiModel.GPT_4O_MINI,
-            tools = listOf(OpenAiTool.TAVILY_SEARCH)
+//            tools = listOf(OpenAiTool.TAVILY_SEARCH)TAVILY_SEARCH
         )
         
         return openAiService.sendChatMessage(request) ?: "요약 실패"
