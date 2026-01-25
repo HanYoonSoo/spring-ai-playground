@@ -4,7 +4,9 @@ import com.hanyoonsoo.springaiplayground.openai.dto.OpenAiSendRequest
 import com.hanyoonsoo.springaiplayground.openai.enum.OpenAiModel
 //import com.hanyoonsoo.springaiplayground.openai.enum.OpenAiTool
 import com.hanyoonsoo.springaiplayground.openai.service.OpenAiService
-import com.hanyoonsoo.springaiplayground.rag.dto.SendChatRequest
+import com.hanyoonsoo.springaiplayground.rag.dto.response.SendChatResponse
+import com.hanyoonsoo.springaiplayground.rag.dto.response.DocumentOutput
+import com.hanyoonsoo.springaiplayground.rag.dto.request.SendChatRequest
 import com.hanyoonsoo.springaiplayground.rag.prompt.RagPrompt
 import com.hanyoonsoo.springaiplayground.rag.repository.DocumentVectorStoreRepository
 import com.hanyoonsoo.springaiplayground.rag.utils.ChunkExtractor
@@ -73,14 +75,11 @@ class RagService(
         }
     }
 
-    fun chatWithRag(projectId: Long, request: SendChatRequest): String {
-        log.info("Chat Request - ProjectId: {}, Query: {}", projectId, request.query)
+    fun chatWithRag(projectId: Long, request: SendChatRequest): SendChatResponse {
         val documents = findDocuments(projectId, request.query)
-        log.info("Found {} documents", documents.size)
 
         val context = if (documents.isNotEmpty()) {
             val joined = documents.joinToString("\n\n") { doc -> "- ${doc.text}" }
-            log.info("Context length: {}", joined.length)
             joined
         } else {
             log.warn("No documents found for ProjectId: {} and Query: {}", projectId, request.query)
@@ -95,7 +94,18 @@ class RagService(
 //            tools = listOf(OpenAiTool.TAVILY_SEARCH) // Tavily 검색 도구 활성화
         )
 
-        return openAiService.sendChatMessage(openAiRequest) ?: "답변 생성 실패"
+        val answer = openAiService.sendChatMessage(openAiRequest) ?: "답변 생성 실패"
+        
+        val documentResponses = documents.map { doc ->
+            DocumentOutput(
+                content = doc.text ?: "",
+                fileName = doc.metadata["fileName"] as? String ?: "unknown",
+                pageNumber = (doc.metadata["pageNumber"] as? Int) ?: (doc.metadata["pageNumber"] as? String)?.toIntOrNull(),
+                docType = doc.metadata["docType"] as? String ?: "unknown"
+            )
+        }
+
+        return SendChatResponse(answer, documentResponses)
     }
 
     private fun findDocuments(projectId: Long, query: String): List<Document> {
