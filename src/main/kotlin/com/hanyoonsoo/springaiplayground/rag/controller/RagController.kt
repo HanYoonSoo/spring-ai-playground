@@ -1,7 +1,8 @@
 package com.hanyoonsoo.springaiplayground.rag.controller
 
 import com.hanyoonsoo.springaiplayground.global.common.response.ApiResponse
-import com.hanyoonsoo.springaiplayground.rag.dto.SendChatRequest
+import com.hanyoonsoo.springaiplayground.rag.dto.response.SendChatResponse
+import com.hanyoonsoo.springaiplayground.rag.dto.request.SendChatRequest
 import com.hanyoonsoo.springaiplayground.rag.service.RagService
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
@@ -34,7 +35,7 @@ class RagController(
     fun chat(
         @PathVariable projectId: Long,
         @RequestBody request: SendChatRequest
-    ): ApiResponse<String> {
+    ): ApiResponse<SendChatResponse> {
         val answer = ragService.chatWithRag(projectId, request)
         return ApiResponse.ok(answer)
     }
