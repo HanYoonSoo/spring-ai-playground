@@ -7,10 +7,9 @@ import com.hanyoonsoo.springaiplayground.openai.service.OpenAiService
 import com.hanyoonsoo.springaiplayground.rag.dto.SendChatRequest
 import com.hanyoonsoo.springaiplayground.rag.prompt.RagPrompt
 import com.hanyoonsoo.springaiplayground.rag.repository.DocumentVectorStoreRepository
+import com.hanyoonsoo.springaiplayground.rag.utils.ChunkExtractor
 import org.apache.pdfbox.pdmodel.PDDocument
-import org.apache.pdfbox.text.PDFTextStripper
 import org.springframework.ai.document.Document
-import org.springframework.ai.transformer.splitter.TokenTextSplitter
 import org.springframework.ai.vectorstore.SearchRequest
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
@@ -18,48 +17,23 @@ import org.springframework.web.multipart.MultipartFile
 @Service
 class RagService(
     private val documentVectorStoreRepository: DocumentVectorStoreRepository,
-    private val openAiService: OpenAiService
+    private val openAiService: OpenAiService,
+    private val chunkExtractor: ChunkExtractor
 ) {
     private val log = org.slf4j.LoggerFactory.getLogger(this::class.java)
 
     fun addDocuments(projectId: Long, file: MultipartFile) {
         val pdfDocument = PDDocument.load(file.inputStream)
+        val uploadDate = java.time.LocalDateTime.now().toString()
 
         try {
-            val pages = mutableListOf<Document>()
-            val stripper = PDFTextStripper()
-            val totalPages = pdfDocument.numberOfPages
-            val uploadDate = java.time.LocalDateTime.now().toString()
-            val fullTextBuilder = StringBuilder()
+            val (chunks, fullTextBuilder) = chunkExtractor.fromPdf(
+                pdfDocument,
+                projectId,
+                file.originalFilename,
+                uploadDate
+            )
 
-            for (pageIndex in 0 until totalPages) {
-                stripper.startPage = pageIndex + 1
-                stripper.endPage = pageIndex + 1
-
-                val pageText = stripper.getText(pdfDocument).trim()
-                if (pageText.isNotBlank()) {
-                    fullTextBuilder.append(pageText).append("\n")
-
-                    val metadata = mapOf(
-                        "projectId" to projectId, // 프로젝트 ID 추가
-                        "fileName" to (file.originalFilename ?: "unknown"),
-                        "uploadDate" to uploadDate,
-                        "pageNumber" to (pageIndex + 1),
-                        "docType" to "chunk"
-                    )
-                    pages.add(Document(pageText, metadata))
-                }
-            }
-
-            // 1. 원문 청킹
-            val splitter = TokenTextSplitter.builder()
-                .withChunkSize(512)
-                .withMinChunkSizeChars(350)
-                .withMinChunkLengthToEmbed(10)
-                .withKeepSeparator(true)
-                .build()
-
-            val chunks = splitter.apply(pages)
             documentVectorStoreRepository.saveDocuments(chunks)
 
             // 2. 문서 요약 및 임베딩 (Summary Embedding)
